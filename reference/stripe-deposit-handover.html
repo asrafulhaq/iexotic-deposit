@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stripe Security Deposit — Dev Handover</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --purple: #635bff;
+  --purple-bg: #eeedfe;
+  --purple-text: #26215c;
+  --teal-bg: #e1f5ee;
+  --teal: #0f6e56;
+  --teal-text: #04342c;
+  --amber-bg: #faeeda;
+  --amber: #854f0b;
+  --amber-text: #412402;
+  --green-bg: #eaf3de;
+  --green: #3b6d11;
+  --green-text: #173404;
+  --coral-bg: #faece7;
+  --coral: #993c1d;
+  --coral-text: #4a1b0c;
+  --gray-bg: #f1efe8;
+  --gray: #5f5e5a;
+  --gray-text: #2c2c2a;
+  --blue-bg: #e6f1fb;
+  --blue: #185fa5;
+  --blue-text: #042c53;
+  --bg: #fafaf8;
+  --surface: #ffffff;
+  --border: #e4e2db;
+  --text: #1a1918;
+  --muted: #6b6963;
+  --code-bg: #1e1d2e;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Outfit', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.65; }
+
+.doc-header {
+  background: var(--code-bg);
+  color: white;
+  padding: 2.5rem 3rem;
+  border-bottom: 3px solid var(--purple);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.doc-header-left {}
+.doc-header .tag {
+  display: inline-block;
+  background: var(--purple);
+  color: white;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 4px;
+  margin-bottom: 0.75rem;
+}
+.doc-header h1 { font-size: 1.9rem; font-weight: 600; margin-bottom: 0.35rem; }
+.doc-header .subtitle { color: #9999b0; font-size: 0.95rem; }
+.doc-header-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  text-align: right;
+  font-size: 0.8rem;
+  color: #666;
+}
+.doc-header-meta span { color: #aaa; }
+
+.layout { display: grid; grid-template-columns: 210px 1fr; min-height: 100vh; }
+
+.sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 1.75rem 1.25rem;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+.sidebar-group { margin-bottom: 1.5rem; }
+.sidebar-group-label {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.sidebar a {
+  display: block;
+  padding: 0.35rem 0.6rem;
+  border-radius: 6px;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.82rem;
+  margin-bottom: 1px;
+  transition: all 0.15s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sidebar a:hover { background: var(--bg); color: var(--text); }
+.sidebar .active { background: var(--purple-bg); color: var(--purple-text); font-weight: 500; }
+
+.main { padding: 2.5rem 3.5rem; max-width: 880px; }
+section { margin-bottom: 3.5rem; scroll-margin-top: 1.5rem; }
+.section-num {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+section h2 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+section h2 .icon {
+  width: 28px; height: 28px;
+  border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+section h3 { font-size: 1rem; font-weight: 600; margin: 1.75rem 0 0.75rem; color: var(--text); }
+p { color: var(--muted); margin-bottom: 0.85rem; font-size: 0.9rem; }
+p:last-child { margin-bottom: 0; }
+strong { color: var(--text); }
+
+.alert {
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  margin-bottom: 1.25rem;
+  border-left: 3px solid;
+  font-size: 0.875rem;
+}
+.alert p { margin: 0; }
+.alert-warning { background: #fffbeb; border-color: #f59e0b; }
+.alert-warning .alert-title { color: #78350f; font-weight: 600; margin-bottom: 0.4rem; }
+.alert-warning p { color: #92400e; }
+.alert-info { background: var(--blue-bg); border-color: var(--blue); }
+.alert-info .alert-title { color: var(--blue-text); font-weight: 600; margin-bottom: 0.4rem; }
+.alert-info p { color: #185fa5; }
+.alert-success { background: var(--green-bg); border-color: var(--green); }
+.alert-success .alert-title { color: var(--green-text); font-weight: 600; margin-bottom: 0.4rem; }
+.alert-success p { color: #3b6d11; }
+
+/* Client info table */
+.client-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.client-table th { background: var(--bg); padding: 0.65rem 1rem; text-align: left; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); font-weight: 500; }
+.client-table td { padding: 0.9rem 1rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+.client-table tr:last-child td { border-bottom: none; }
+.client-table .field-name { font-weight: 500; color: var(--text); margin-bottom: 0.2rem; }
+.client-table .field-desc { color: var(--muted); font-size: 0.8rem; margin-top: 0.2rem; }
+.badge { display: inline-block; padding: 1px 7px; border-radius: 4px; font-size: 10px; font-weight: 500; }
+.badge-red { background: #fef2f2; color: #991b1b; }
+.badge-green { background: var(--green-bg); color: var(--green-text); }
+
+/* Env vars table */
+.env-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.env-table th { background: var(--bg); padding: 0.65rem 1rem; text-align: left; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); border-bottom: 2px solid var(--border); font-weight: 500; }
+.env-table td { padding: 0.85rem 1rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+.env-table tr:last-child td { border-bottom: none; }
+.env-name { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--purple); font-weight: 500; }
+.env-example { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--muted); background: var(--bg); padding: 2px 6px; border-radius: 4px; }
+
+/* File tree */
+.file-tree {
+  background: var(--code-bg);
+  padding: 1.25rem 1.5rem;
+  border-radius: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  line-height: 2;
+  color: #cdd6f4;
+}
+.ft-dir { color: #8be9fd; }
+.ft-html { color: #ff79c6; }
+.ft-js { color: #f1fa8c; }
+.ft-json { color: #bd93f9; }
+.ft-comment { color: #6272a4; font-style: italic; }
+
+/* Code blocks */
+.file-block { margin-bottom: 2rem; }
+.file-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #2a2940;
+  padding: 0.65rem 1.25rem;
+  border-radius: 8px 8px 0 0;
+  border-bottom: 1px solid #3a3858;
+}
+.file-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px; height: 26px;
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  flex-shrink: 0;
+}
+.fb-html { background: #e34c26; color: white; }
+.fb-js { background: #f0db4f; color: #1a1a1a; }
+.fb-json { background: #6b7280; color: white; }
+.file-path { color: #e2e8f0; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; }
+.file-role { color: #7080a0; font-size: 0.78rem; margin-left: auto; }
+pre {
+  background: var(--code-bg);
+  padding: 1.25rem 1.5rem;
+  border-radius: 0 0 8px 8px;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  line-height: 1.75;
+  color: #cdd6f4;
+}
+.c-comment { color: #6272a4; }
+.c-string { color: #f1fa8c; }
+.c-key { color: #ff79c6; }
+.c-num { color: #bd93f9; }
+.c-fn { color: #50fa7b; }
+.c-tag { color: #ff79c6; }
+.c-attr { color: #50fa7b; }
+.c-val { color: #f1fa8c; }
+.c-hi { color: #ffb86c; }
+
+/* Steps */
+ol.steps { list-style: none; padding: 0; counter-reset: step; }
+ol.steps li {
+  counter-increment: step;
+  position: relative;
+  padding: 1rem 1rem 1rem 3.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 0.6rem;
+  font-size: 0.875rem;
+}
+ol.steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 1rem; top: 1rem;
+  width: 26px; height: 26px;
+  background: var(--purple);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+ol.steps li strong { display: block; color: var(--text); margin-bottom: 0.2rem; }
+ol.steps li p { margin: 0; }
+
+/* Checklist */
+ul.checklist { list-style: none; padding: 0; }
+ul.checklist li {
+  padding: 0.75rem 1rem 0.75rem 2.75rem;
+  position: relative;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+ul.checklist li:last-child { border-bottom: none; }
+ul.checklist li::before { content: '☐'; position: absolute; left: 0.9rem; color: var(--gray); font-size: 1rem; }
+ul.checklist li strong { color: var(--text); }
+
+code { font-family: 'JetBrains Mono', monospace; background: var(--bg); border: 1px solid var(--border); padding: 1px 5px; border-radius: 4px; font-size: 0.78em; color: var(--purple); }
+
+.diagram-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+.diagram-label {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+.info-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; }
+.info-card .card-title { font-weight: 600; font-size: 0.875rem; margin-bottom: 0.4rem; color: var(--text); }
+.info-card p { font-size: 0.8rem; margin: 0; }
+
+@media (max-width: 760px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .main { padding: 1.5rem; }
+  .grid-2 { grid-template-columns: 1fr; }
+}
+@media print {
+  .sidebar { display: none; }
+  .layout { grid-template-columns: 1fr; }
+  .main { padding: 1rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="doc-header">
+  <div class="doc-header-left">
+    <div class="tag">Dev Handover Document</div>
+    <h1>Stripe Security Deposit Authorization</h1>
+    <div class="subtitle">Custom checkout page · Manual capture (hold) · Slack notifications</div>
+  </div>
+  <div class="doc-header-meta">
+    <div>Stack <span>Node.js · Vercel · Stripe · Slack</span></div>
+    <div>Files <span>6 files total</span></div>
+    <div>Est. build time <span>2–4 hours</span></div>
+  </div>
+</div>
+
+<div class="layout">
+
+<nav class="sidebar">
+  <div class="sidebar-group">
+    <div class="sidebar-group-label">Start here</div>
+    <a href="#overview">Overview</a>
+    <a href="#client-info" class="active">Info needed from client</a>
+  </div>
+  <div class="sidebar-group">
+    <div class="sidebar-group-label">Architecture</div>
+    <a href="#architecture">System diagram</a>
+    <a href="#flow">Checkout flow</a>
+    <a href="#files">File structure</a>
+  </div>
+  <div class="sidebar-group">
+    <div class="sidebar-group-label">Code</div>
+    <a href="#code-package">package.json</a>
+    <a href="#code-vercel">vercel.json</a>
+    <a href="#code-index">index.html</a>
+    <a href="#code-success">success.html</a>
+    <a href="#code-checkout">create-checkout.js</a>
+    <a href="#code-webhook">webhook.js</a>
+  </div>
+  <div class="sidebar-group">
+    <div class="sidebar-group-label">Deploy</div>
+    <a href="#env-vars">Environment variables</a>
+    <a href="#slack-setup">Slack webhook setup</a>
+    <a href="#stripe-webhook">Stripe webhook setup</a>
+    <a href="#deploy-steps">Deployment steps</a>
+    <a href="#testing">Testing checklist</a>
+    <a href="#post-deploy">Owner's workflow</a>
+  </div>
+</nav>
+
+<main class="main">
+
+<!-- ─── OVERVIEW ─────────────────────────────────────────── -->
+<section id="overview">
+  <div class="section-num">Section 01</div>
+  <h2><span class="icon" style="background:#e6f1fb">📋</span> Project Overview</h2>
+
+  <p>The client rents vehicles and needs to place a <strong>refundable security deposit hold</strong> on customers' cards. Stripe's standard payment links don't support this — they charge immediately. This project builds a custom one-button webpage that creates a Stripe Checkout Session with <code>capture_method: manual</code>, which holds funds without collecting them.</p>
+
+  <div class="grid-2">
+    <div class="info-card">
+      <div class="card-title">Customer experience</div>
+      <p>Identical to a normal Stripe payment link. They land on a page, click one button, enter card details on Stripe's hosted page, and see a confirmation. No confusion.</p>
+    </div>
+    <div class="info-card">
+      <div class="card-title">Owner experience</div>
+      <p>Gets a Slack notification instantly when a card is authorized. After the car is returned, they log into the Stripe Dashboard and either capture (charge) or release (cancel) the hold.</p>
+    </div>
+  </div>
+
+  <div class="alert alert-info">
+    <div class="alert-title">Key technical distinction</div>
+    <p>The <code>capture_method: manual</code> flag must be set inside <code>payment_intent_data</code>, NOT at the top level of the Checkout Session. Stripe's default authorization window is 7 days. If holds longer than 7 days are needed, Extended Authorization must be enabled in the Stripe Dashboard (allows up to 30 days).</p>
+  </div>
+</section>
+
+<!-- ─── CLIENT INFO ───────────────────────────────────────── -->
+<section id="client-info">
+  <div class="section-num">Section 02</div>
+  <h2><span class="icon" style="background:#faeeda">📋</span> Information Needed from Client</h2>
+
+  <div class="alert alert-warning">
+    <div class="alert-title">Collect this before starting</div>
+    <p>You cannot deploy or test without the Stripe keys. Request everything in this section from the client before writing a line of code.</p>
+  </div>
+
+  <table class="client-table">
+    <thead>
+      <tr>
+        <th style="width:30%">What you need</th>
+        <th style="width:12%">Required?</th>
+        <th>Notes &amp; how to get it</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          <div class="field-name">Stripe Secret Key (Test)</div>
+          <div class="field-desc"><code>sk_test_...</code></div>
+        </td>
+        <td><span class="badge badge-red">Required</span></td>
+        <td>Stripe Dashboard → Developers → API Keys → Secret key. Use test key during build. Never commit to code.</td>
+      </tr>
+      <tr>
+        <td>
+          <div class="field-name">Stripe Secret Key (Live)</div>
+          <div class="field-desc"><code>sk_live_...</code></div>
+        </td>
+        <td><span class="badge badge-red">Required</span></td>
+        <td>Same location, toggle to "Live" mode. Only added to Vercel after testing is complete and confirmed.</td>
+      </tr>
+      <tr>
+        <td>
+          <div class="field-name">Deposit Amount</div>
+          <div class="field-desc">In US dollars, e.g. $500</div>
+        </td>
+        <td><span class="badge badge-red">Required</span></td>
+        <td>Stored as <code>DEPOSIT_AMOUNT_CENTS</code> in Vercel (e.g. $500 = <code>50000</code>). Can be changed anytime in Vercel dashboard with no code changes. Also update the display in <code>index.html</code>.</td>
+      </tr>
+      <tr>
+        <td>
+          <div class="field-name">Slack Workspace Access</div>
+          <div class="field-desc">To create Incoming Webhook</div>
+        </td>
+        <td><span class="badge badge-red">Required</span></td>
+        <td>Client needs to go to <code>api.slack.com/apps</code>, create an app, enable Incoming Webhooks, pick a channel, and share the <code>hooks.slack.com/services/...</code> URL. Free plan works. See Section 09 for step-by-step.</td>
+      </tr>
+      <tr>
+        <td>
+          <div class="field-name">Business / Brand Name</div>
+          <div class="field-desc">Shown on deposit page &amp; Stripe checkout</div>
+        </td>
+        <td><span class="badge badge-red">Required</span></td>
+        <td>Used in the page title, the Stripe line item name ("Security Deposit — [Business Name] Rental"), and the product description. Update wherever you see <strong>Vehicle Rental</strong> in the code.</td>
+      </tr>
+      <tr>
+        <td>
+          <div class="field-name">Custom Domain</div>
+          <div class="field-desc">e.g. deposit.yourbusiness.com</div>
+        </td>
+        <td><span class="badge badge-green">Optional</span></td>
+        <td>If they want a custom domain instead of the default <code>your-project.vercel.app</code>. Add in Vercel → Project → Settings → Domains. Requires DNS access.</td>
+      </tr>
+      <tr>
+        <td>
+          <div class="field-name">Brand Colors / Logo</div>
+          <div class="field-desc">For the deposit page design</div>
+        </td>
+        <td><span class="badge badge-green">Optional</span></td>
+        <td>The button page is minimal. If they want it branded, get hex color codes and a logo file. The Stripe-hosted checkout page uses their Stripe account branding (set in Stripe Dashboard → Settings → Branding).</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ─── ARCHITECTURE ──────────────────────────────────────── -->
+<section id="architecture">
+  <div class="section-num">Section 03</div>
+  <h2><span class="icon" style="background:#e1f5ee">🏗</span> System Architecture</h2>
+
+  <p>Four components. The customer only ever sees the browser side and Stripe's hosted page. Everything else is invisible to them.</p>
+
+  <div class="diagram-wrap">
+    <span class="diagram-label">System architecture — component overview</span>
+    <svg width="100%" viewBox="0 0 680 295" xmlns="http://www.w3.org/2000/svg" font-family="'Outfit', system-ui, sans-serif">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="#888780" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+      <!-- Browser -->
+      <rect x="30" y="110" width="128" height="58" rx="8" fill="#f1efe8" stroke="#888780" stroke-width="0.5"/>
+      <text x="94" y="133" text-anchor="middle" font-size="14" font-weight="500" fill="#2c2c2a">Browser</text>
+      <text x="94" y="152" text-anchor="middle" font-size="12" fill="#5f5e5a">Your webpage</text>
+      <!-- Vercel -->
+      <rect x="218" y="110" width="158" height="58" rx="8" fill="#eeedfe" stroke="#534ab7" stroke-width="0.5"/>
+      <text x="297" y="133" text-anchor="middle" font-size="14" font-weight="500" fill="#26215c">Vercel fn</text>
+      <text x="297" y="152" text-anchor="middle" font-size="12" fill="#534ab7">create-checkout.js</text>
+      <!-- Stripe -->
+      <rect x="438" y="110" width="130" height="58" rx="8" fill="#e1f5ee" stroke="#0f6e56" stroke-width="0.5"/>
+      <text x="503" y="133" text-anchor="middle" font-size="14" font-weight="500" fill="#04342c">Stripe</text>
+      <text x="503" y="152" text-anchor="middle" font-size="12" fill="#0f6e56">Hosted checkout</text>
+      <!-- Slack -->
+      <rect x="438" y="220" width="130" height="58" rx="8" fill="#faeeda" stroke="#854f0b" stroke-width="0.5"/>
+      <text x="503" y="243" text-anchor="middle" font-size="14" font-weight="500" fill="#412402">Slack</text>
+      <text x="503" y="262" text-anchor="middle" font-size="12" fill="#854f0b">Your workspace</text>
+      <!-- Arrow 1: Browser → Vercel -->
+      <line x1="158" y1="139" x2="218" y2="139" stroke="#888780" stroke-width="1.5" marker-end="url(#arr)"/>
+      <text x="188" y="130" text-anchor="middle" font-size="11" fill="#888780">① click</text>
+      <!-- Arrow 2: Vercel → Stripe -->
+      <line x1="376" y1="139" x2="438" y2="139" stroke="#888780" stroke-width="1.5" marker-end="url(#arr)"/>
+      <text x="407" y="130" text-anchor="middle" font-size="11" fill="#888780">② API call</text>
+      <!-- Arrow 3: Redirect arc Stripe → Browser -->
+      <path d="M503,110 C503,52 94,52 94,110" fill="none" stroke="#888780" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arr)"/>
+      <text x="300" y="47" text-anchor="middle" font-size="11" fill="#888780">③ redirect to Stripe-hosted checkout page</text>
+      <!-- Arrow 4: Stripe → Slack -->
+      <line x1="503" y1="168" x2="503" y2="220" stroke="#888780" stroke-width="1.5" marker-end="url(#arr)"/>
+      <text x="523" y="198" font-size="11" fill="#888780">④ webhook</text>
+    </svg>
+  </div>
+</section>
+
+<!-- ─── FLOW ──────────────────────────────────────────────── -->
+<section id="flow">
+  <div class="section-num">Section 04</div>
+  <h2><span class="icon" style="background:#faeeda">↕</span> Checkout Flow</h2>
+
+  <p>Step-by-step sequence from the customer's perspective and what happens in the background.</p>
+
+  <div class="diagram-wrap">
+    <span class="diagram-label">Full checkout sequence</span>
+    <svg width="100%" viewBox="0 0 680 600" xmlns="http://www.w3.org/2000/svg" font-family="'Outfit', system-ui, sans-serif">
+      <defs>
+        <marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="#888780" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+      <!-- Step 1 -->
+      <rect x="240" y="20" width="200" height="44" rx="8" fill="#f1efe8" stroke="#888780" stroke-width="0.5"/>
+      <text x="340" y="46" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#2c2c2a">You share the link</text>
+      <line x1="340" y1="64" x2="340" y2="100" stroke="#888780" stroke-width="1.5" marker-end="url(#arr2)"/>
+      <!-- Step 2 -->
+      <rect x="240" y="100" width="200" height="56" rx="8" fill="#e1f5ee" stroke="#0f6e56" stroke-width="0.5"/>
+      <text x="340" y="120" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#04342c">Customer opens page</text>
+      <text x="340" y="140" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#0f6e56">Sees the authorize button</text>
+      <line x1="340" y1="156" x2="340" y2="192" stroke="#888780" stroke-width="1.5" marker-end="url(#arr2)"/>
+      <!-- Step 3 -->
+      <rect x="240" y="192" width="200" height="56" rx="8" fill="#e1f5ee" stroke="#0f6e56" stroke-width="0.5"/>
+      <text x="340" y="212" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#04342c">Button clicked</text>
+      <text x="340" y="232" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#0f6e56">POST to Vercel serverless fn</text>
+      <line x1="340" y1="248" x2="340" y2="284" stroke="#888780" stroke-width="1.5" marker-end="url(#arr2)"/>
+      <!-- Step 4 -->
+      <rect x="230" y="284" width="220" height="56" rx="8" fill="#eeedfe" stroke="#534ab7" stroke-width="0.5"/>
+      <text x="340" y="304" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#26215c">Session created</text>
+      <text x="340" y="324" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#534ab7">capture_method: manual</text>
+      <line x1="340" y1="340" x2="340" y2="376" stroke="#888780" stroke-width="1.5" marker-end="url(#arr2)"/>
+      <!-- Step 5 -->
+      <rect x="240" y="376" width="200" height="56" rx="8" fill="#e1f5ee" stroke="#0f6e56" stroke-width="0.5"/>
+      <text x="340" y="396" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#04342c">Stripe checkout page</text>
+      <text x="340" y="416" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#0f6e56">Customer enters card details</text>
+      <line x1="340" y1="432" x2="340" y2="468" stroke="#888780" stroke-width="1.5" marker-end="url(#arr2)"/>
+      <!-- Decision -->
+      <rect x="258" y="468" width="164" height="40" rx="8" fill="#faeeda" stroke="#854f0b" stroke-width="0.5"/>
+      <text x="340" y="492" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#412402">Authorized?</text>
+      <!-- Yes branch left -->
+      <path d="M280,508 L280,540 L155,540 L155,556" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arr2)"/>
+      <text x="214" y="534" text-anchor="middle" font-size="11" fill="#3b6d11">Yes</text>
+      <!-- No branch right -->
+      <path d="M400,488 L520,488 L520,556" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arr2)"/>
+      <text x="467" y="481" text-anchor="middle" font-size="11" fill="#993c1d">No / cancel</text>
+      <!-- Success box -->
+      <rect x="55" y="556" width="200" height="44" rx="8" fill="#eaf3de" stroke="#3b6d11" stroke-width="0.5"/>
+      <text x="155" y="572" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="#173404">Hold placed on card</text>
+      <text x="155" y="588" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#3b6d11">Uncaptured — no charge yet</text>
+      <!-- Cancel box -->
+      <rect x="420" y="556" width="200" height="44" rx="8" fill="#faece7" stroke="#993c1d" stroke-width="0.5"/>
+      <text x="520" y="578" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="500" fill="#4a1b0c">Customer cancels</text>
+    </svg>
+  </div>
+
+  <div class="alert alert-success">
+    <div class="alert-title">After successful authorization</div>
+    <p>Stripe fires a <code>checkout.session.completed</code> webhook to <code>/api/webhook</code>. The webhook handler verifies the signature, then posts a message to Slack with the customer's name, email, amount, and a link to the Stripe Dashboard. The URL is reusable — every click creates a new unique Checkout Session.</p>
+  </div>
+</section>
+
+<!-- ─── FILE STRUCTURE ────────────────────────────────────── -->
+<section id="files">
+  <div class="section-num">Section 05</div>
+  <h2><span class="icon" style="background:#eeedfe">📁</span> File Structure</h2>
+
+  <p>Six files total. The <code>api/</code> folder is automatically detected by Vercel as serverless functions — no additional configuration needed beyond <code>vercel.json</code>.</p>
+
+  <div class="file-tree">
+    <span class="ft-dir">deposit-link/</span><br>
+    ├── <span class="ft-json">package.json</span>          <span class="ft-comment">— npm dependencies (Stripe SDK)</span><br>
+    ├── <span class="ft-json">vercel.json</span>           <span class="ft-comment">— Vercel routing config</span><br>
+    ├── <span class="ft-html">index.html</span>            <span class="ft-comment">— Customer-facing button page</span><br>
+    ├── <span class="ft-html">success.html</span>          <span class="ft-comment">— Post-authorization confirmation</span><br>
+    └── <span class="ft-dir">api/</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;├── <span class="ft-js">create-checkout.js</span>  <span class="ft-comment">— Creates Stripe session with hold</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;└── <span class="ft-js">webhook.js</span>          <span class="ft-comment">— Receives Stripe event, pings Slack</span>
+  </div>
+</section>
+
+<!-- ─── CODE ──────────────────────────────────────────────── -->
+<section id="code-package">
+  <div class="section-num">Section 06</div>
+  <h2><span class="icon" style="background:#e6f1fb">💻</span> Complete Code</h2>
+  <h3>package.json</h3>
+  <div class="file-block">
+    <div class="file-header">
+      <span class="file-badge fb-json">{}</span>
+      <span class="file-path">package.json</span>
+      <span class="file-role">npm dependencies</span>
+    </div>
+    <pre>{
+  <span class="c-key">"name"</span>: <span class="c-string">"deposit-link"</span>,
+  <span class="c-key">"version"</span>: <span class="c-string">"1.0.0"</span>,
+  <span class="c-key">"dependencies"</span>: {
+    <span class="c-key">"stripe"</span>: <span class="c-string">"^17.0.0"</span>
+  }
+}</pre>
+  </div>
+</section>
+
+<section id="code-vercel">
+  <h3>vercel.json</h3>
+  <div class="file-block">
+    <div class="file-header">
+      <span class="file-badge fb-json">{}</span>
+      <span class="file-path">vercel.json</span>
+      <span class="file-role">Vercel project config</span>
+    </div>
+    <pre>{
+  <span class="c-key">"version"</span>: <span class="c-num">2</span>,
+  <span class="c-key">"rewrites"</span>: [
+    { <span class="c-key">"source"</span>: <span class="c-string">"/"</span>, <span class="c-key">"destination"</span>: <span class="c-string">"/index.html"</span> },
+    { <span class="c-key">"source"</span>: <span class="c-string">"/success"</span>, <span class="c-key">"destination"</span>: <span class="c-string">"/success.html"</span> }
+  ]
+}</pre>
+  </div>
+</section>
+
+<section id="code-index">
+  <h3>index.html</h3>
+  <p>The one-button deposit page. Update the <strong>display amount</strong> in two places marked with comments below when the deposit amount changes.</p>
+  <div class="file-block">
+    <div class="file-header">
+      <span class="file-badge fb-html">H</span>
+      <span class="file-path">index.html</span>
+      <span class="file-role">Customer-facing button page</span>
+    </div>
+    <pre><span class="c-comment">&lt;!-- ⚠️  Update "Vehicle Rental" below to match client's business name --&gt;
+&lt;!-- ⚠️  Update the $500 display amounts when DEPOSIT_AMOUNT_CENTS changes --&gt;</span>
+
+<span class="c-tag">&lt;!DOCTYPE html&gt;</span>
+<span class="c-tag">&lt;html</span> <span class="c-attr">lang</span>=<span class="c-val">"en"</span><span class="c-tag">&gt;</span>
+<span class="c-tag">&lt;head&gt;</span>
+  <span class="c-tag">&lt;meta</span> <span class="c-attr">charset</span>=<span class="c-val">"UTF-8"</span><span class="c-tag">&gt;</span>
+  <span class="c-tag">&lt;meta</span> <span class="c-attr">name</span>=<span class="c-val">"viewport"</span> <span class="c-attr">content</span>=<span class="c-val">"width=device-width, initial-scale=1"</span><span class="c-tag">&gt;</span>
+  <span class="c-tag">&lt;title&gt;</span>Security Deposit — Vehicle Rental<span class="c-tag">&lt;/title&gt;</span>
+  <span class="c-tag">&lt;style&gt;</span>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0d0d0d;
+      color: #f0ece4;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .card {
+      background: #161616;
+      border: 1px solid #2a2a2a;
+      border-radius: 16px;
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 420px;
+    }
+    .eyebrow {
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #666;
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-size: 3rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.25rem;
+    }
+    <span class="c-comment">/* ⚠️  Update $500 here to match DEPOSIT_AMOUNT_CENTS */</span>
+    .amount-note { color: #555; font-size: 0.875rem; margin-bottom: 2rem; }
+    .info {
+      background: #1e1e1e;
+      border: 1px solid #2a2a2a;
+      border-radius: 10px;
+      padding: 1.25rem;
+      margin-bottom: 2rem;
+      font-size: 0.875rem;
+      color: #999;
+      line-height: 1.6;
+    }
+    .info strong { color: #f0ece4; }
+    button {
+      width: 100%;
+      background: #635bff;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 1rem;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    button:hover  { background: #4f47cc; }
+    button:active { transform: scale(0.99); }
+    .secure {
+      text-align: center;
+      font-size: 0.75rem;
+      color: #444;
+      margin-top: 1rem;
+    }
+  <span class="c-tag">&lt;/style&gt;</span>
+<span class="c-tag">&lt;/head&gt;</span>
+<span class="c-tag">&lt;body&gt;</span>
+  <span class="c-tag">&lt;div</span> <span class="c-attr">class</span>=<span class="c-val">"card"</span><span class="c-tag">&gt;</span>
+    <span class="c-tag">&lt;p</span> <span class="c-attr">class</span>=<span class="c-val">"eyebrow"</span><span class="c-tag">&gt;</span>Vehicle Rental<span class="c-tag">&lt;/p&gt;</span>
+    <span class="c-comment">&lt;!-- ⚠️  Update $500 to match your DEPOSIT_AMOUNT_CENTS --&gt;</span>
+    <span class="c-tag">&lt;h1&gt;</span>$500<span class="c-tag">&lt;/h1&gt;</span>
+    <span class="c-tag">&lt;p</span> <span class="c-attr">class</span>=<span class="c-val">"amount-note"</span><span class="c-tag">&gt;</span>Security deposit hold<span class="c-tag">&lt;/p&gt;</span>
+    <span class="c-tag">&lt;div</span> <span class="c-attr">class</span>=<span class="c-val">"info"</span><span class="c-tag">&gt;</span>
+      <span class="c-tag">&lt;strong&gt;</span>This is not a charge.<span class="c-tag">&lt;/strong&gt;</span> A temporary hold will be placed
+      on your card. The full amount is released after your vehicle is
+      returned and inspected.
+    <span class="c-tag">&lt;/div&gt;</span>
+    <span class="c-tag">&lt;form</span> <span class="c-attr">action</span>=<span class="c-val">"/api/create-checkout"</span> <span class="c-attr">method</span>=<span class="c-val">"POST"</span><span class="c-tag">&gt;</span>
+      <span class="c-tag">&lt;button</span> <span class="c-attr">type</span>=<span class="c-val">"submit"</span><span class="c-tag">&gt;</span>Authorize Security Deposit →<span class="c-tag">&lt;/button&gt;</span>
+    <span class="c-tag">&lt;/form&gt;</span>
+    <span class="c-tag">&lt;p</span> <span class="c-attr">class</span>=<span class="c-val">"secure"</span><span class="c-tag">&gt;</span>🔒 Secured by Stripe<span class="c-tag">&lt;/p&gt;</span>
+  <span class="c-tag">&lt;/div&gt;</span>
+<span class="c-tag">&lt;/body&gt;</span>
+<span class="c-tag">&lt;/html&gt;</span></pre>
+  </div>
+</section>
+
+<section id="code-success">
+  <h3>success.html</h3>
+  <div class="file-block">
+    <div class="file-header">
+      <span class="file-badge fb-html">H</span>
+      <span class="file-path">success.html</span>
+      <span class="file-role">Post-authorization confirmation</span>
+    </div>
+    <pre><span class="c-tag">&lt;!DOCTYPE html&gt;</span>
+<span class="c-tag">&lt;html</span> <span class="c-attr">lang</span>=<span class="c-val">"en"</span><span class="c-tag">&gt;</span>
+<span class="c-tag">&lt;head&gt;</span>
+  <span class="c-tag">&lt;meta</span> <span class="c-attr">charset</span>=<span class="c-val">"UTF-8"</span><span class="c-tag">&gt;</span>
+  <span class="c-tag">&lt;meta</span> <span class="c-attr">name</span>=<span class="c-val">"viewport"</span> <span class="c-attr">content</span>=<span class="c-val">"width=device-width, initial-scale=1"</span><span class="c-tag">&gt;</span>
+  <span class="c-tag">&lt;title&gt;</span>Deposit Authorized<span class="c-tag">&lt;/title&gt;</span>
+  <span class="c-tag">&lt;style&gt;</span>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0d0d0d;
+      color: #f0ece4;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .card {
+      background: #161616;
+      border: 1px solid #2a2a2a;
+      border-radius: 16px;
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+    }
+    .check {
+      width: 56px; height: 56px;
+      background: #1a3a1a;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin: 0 auto 1.5rem;
+    }
+    h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem; }
+    p {
+      color: #888;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      margin-bottom: 0.75rem;
+    }
+  <span class="c-tag">&lt;/style&gt;</span>
+<span class="c-tag">&lt;/head&gt;</span>
+<span class="c-tag">&lt;body&gt;</span>
+  <span class="c-tag">&lt;div</span> <span class="c-attr">class</span>=<span class="c-val">"card"</span><span class="c-tag">&gt;</span>
+    <span class="c-tag">&lt;div</span> <span class="c-attr">class</span>=<span class="c-val">"check"</span><span class="c-tag">&gt;</span>✓<span class="c-tag">&lt;/div&gt;</span>
+    <span class="c-tag">&lt;h1&gt;</span>Deposit Authorized<span class="c-tag">&lt;/h1&gt;</span>
+    <span class="c-tag">&lt;p&gt;</span>A hold has been placed on your card. <span class="c-tag">&lt;strong&gt;</span>You have not been charged.<span class="c-tag">&lt;/strong&gt;&lt;/p&gt;</span>
+    <span class="c-tag">&lt;p&gt;</span>The hold will be released after your vehicle is returned
+    and inspected. You'll see it reflected on your card within a few days.<span class="c-tag">&lt;/p&gt;</span>
+  <span class="c-tag">&lt;/div&gt;</span>
+<span class="c-tag">&lt;/body&gt;</span>
+<span class="c-tag">&lt;/html&gt;</span></pre>
+  </div>
+</section>
+
+<section id="code-checkout">
+  <h3>api/create-checkout.js</h3>
+  <p>The core serverless function. The deposit amount is read from the <code>DEPOSIT_AMOUNT_CENTS</code> environment variable so it can be changed without touching code. Falls back to $500 if the variable is missing.</p>
+  <div class="file-block">
+    <div class="file-header">
+      <span class="file-badge fb-js">JS</span>
+      <span class="file-path">api/create-checkout.js</span>
+      <span class="file-role">Creates Stripe checkout session</span>
+    </div>
+    <pre><span class="c-key">const</span> Stripe = <span class="c-fn">require</span>(<span class="c-string">'stripe'</span>);
+<span class="c-key">const</span> stripe = <span class="c-fn">Stripe</span>(process.env.STRIPE_SECRET_KEY);
+
+module.exports = <span class="c-key">async</span> (req, res) =&gt; {
+  <span class="c-comment">// Only accept POST requests</span>
+  <span class="c-key">if</span> (req.method !== <span class="c-string">'POST'</span>) {
+    <span class="c-key">return</span> res.<span class="c-fn">status</span>(<span class="c-num">405</span>).<span class="c-fn">json</span>({ error: <span class="c-string">'Method not allowed'</span> });
+  }
+
+  <span class="c-key">try</span> {
+    <span class="c-comment">// Amount from env variable (in cents). Change DEPOSIT_AMOUNT_CENTS in Vercel
+    // to update the deposit without touching code.
+    // Examples: 50000 = $500 | 30000 = $300 | 100000 = $1,000</span>
+    <span class="c-key">const</span> amount = <span class="c-fn">parseInt</span>(process.env.DEPOSIT_AMOUNT_CENTS, <span class="c-num">10</span>) || <span class="c-num">50000</span>;
+
+    <span class="c-key">const</span> session = <span class="c-key">await</span> stripe.checkout.sessions.<span class="c-fn">create</span>({
+      mode: <span class="c-string">'payment'</span>,
+      payment_method_types: [<span class="c-string">'card'</span>],
+
+      payment_intent_data: {
+        <span class="c-comment">// ⚠️  This is the critical flag — hold funds, do NOT charge yet</span>
+        capture_method: <span class="c-string">'manual'</span>,
+        description: <span class="c-string">'Vehicle Rental Security Deposit'</span>,
+      },
+
+      line_items: [{
+        price_data: {
+          currency: <span class="c-string">'usd'</span>,
+          product_data: {
+            name: <span class="c-string">'Security Deposit — Vehicle Rental'</span>,
+            description: <span class="c-string">'Refundable hold. Released after vehicle return and inspection.'</span>,
+          },
+          unit_amount: amount,
+        },
+        quantity: <span class="c-num">1</span>,
+      }],
+
+      success_url: `${process.env.SITE_URL}/success.html`,
+      cancel_url:  `${process.env.SITE_URL}/`,
+    });
+
+    <span class="c-comment">// Redirect customer to Stripe's hosted checkout page</span>
+    res.<span class="c-fn">redirect</span>(<span class="c-num">303</span>, session.url);
+
+  } <span class="c-key">catch</span> (err) {
+    console.<span class="c-fn">error</span>(<span class="c-string">'Stripe error:'</span>, err);
+    res.<span class="c-fn">status</span>(<span class="c-num">500</span>).<span class="c-fn">json</span>({ error: err.message });
+  }
+};</pre>
+  </div>
+</section>
+
+<section id="code-webhook">
+  <h3>api/webhook.js</h3>
+  <p>Receives events from Stripe after a card is authorized. Verifies the signature to confirm it's genuinely from Stripe, then sends a Slack message. Body parsing must be disabled so the raw request body is available for signature verification.</p>
+  <div class="file-block">
+    <div class="file-header">
+      <span class="file-badge fb-js">JS</span>
+      <span class="file-path">api/webhook.js</span>
+      <span class="file-role">Stripe webhook → Slack alert</span>
+    </div>
+    <pre><span class="c-key">const</span> Stripe = <span class="c-fn">require</span>(<span class="c-string">'stripe'</span>);
+<span class="c-key">const</span> stripe = <span class="c-fn">Stripe</span>(process.env.STRIPE_SECRET_KEY);
+
+<span class="c-comment">// Disable Vercel's automatic body parsing.
+// Required so we can verify Stripe's signature on the raw body.</span>
+module.exports.config = {
+  api: { bodyParser: <span class="c-key">false</span> },
+};
+
+module.exports = <span class="c-key">async</span> (req, res) =&gt; {
+  <span class="c-key">if</span> (req.method !== <span class="c-string">'POST'</span>) {
+    <span class="c-key">return</span> res.<span class="c-fn">status</span>(<span class="c-num">405</span>).<span class="c-fn">send</span>(<span class="c-string">'Method not allowed'</span>);
+  }
+
+  <span class="c-comment">// Collect the raw request body as a Buffer</span>
+  <span class="c-key">const</span> rawBody = <span class="c-key">await new</span> <span class="c-fn">Promise</span>((resolve, reject) =&gt; {
+    <span class="c-key">const</span> chunks = [];
+    req.<span class="c-fn">on</span>(<span class="c-string">'data'</span>, chunk =&gt; chunks.<span class="c-fn">push</span>(chunk));
+    req.<span class="c-fn">on</span>(<span class="c-string">'end'</span>,  ()    =&gt; <span class="c-fn">resolve</span>(Buffer.<span class="c-fn">concat</span>(chunks)));
+    req.<span class="c-fn">on</span>(<span class="c-string">'error'</span>, reject);
+  });
+
+  <span class="c-comment">// Verify the event actually came from Stripe</span>
+  <span class="c-key">let</span> event;
+  <span class="c-key">try</span> {
+    event = stripe.webhooks.<span class="c-fn">constructEvent</span>(
+      rawBody,
+      req.headers[<span class="c-string">'stripe-signature'</span>],
+      process.env.STRIPE_WEBHOOK_SECRET   <span class="c-comment">// whsec_... from Stripe Dashboard</span>
+    );
+  } <span class="c-key">catch</span> (err) {
+    console.<span class="c-fn">error</span>(<span class="c-string">'Webhook signature failed:'</span>, err.message);
+    <span class="c-key">return</span> res.<span class="c-fn">status</span>(<span class="c-num">400</span>).<span class="c-fn">send</span>(`Webhook Error: ${err.message}`);
+  }
+
+  <span class="c-comment">// This event fires when customer completes checkout (hold is active)</span>
+  <span class="c-key">if</span> (event.type === <span class="c-string">'checkout.session.completed'</span>) {
+    <span class="c-key">const</span> session = event.data.object;
+
+    <span class="c-key">const</span> amount = `$${(session.amount_total / <span class="c-num">100</span>).<span class="c-fn">toFixed</span>(<span class="c-num">2</span>)}`;
+    <span class="c-key">const</span> name   = session.customer_details?.name  || <span class="c-string">'Unknown'</span>;
+    <span class="c-key">const</span> email  = session.customer_details?.email || <span class="c-string">'Unknown'</span>;
+    <span class="c-key">const</span> piId   = session.payment_intent;
+
+    <span class="c-key">const</span> slackPayload = {
+      text: [
+        <span class="c-string">'🔒 *Security Deposit Authorized*'</span>,
+        `*Amount held:* ${amount}`,
+        `*Customer:* ${name}`,
+        `*Email:* ${email}`,
+        `*Payment Intent ID:* \`${piId}\``,
+        <span class="c-string">''</span>,
+        <span class="c-string">'→ &lt;https://dashboard.stripe.com/payments|Open Stripe Dashboard&gt; to capture or release.'</span>,
+      ].<span class="c-fn">join</span>(<span class="c-string">'\n'</span>),
+    };
+
+    <span class="c-key">try</span> {
+      <span class="c-key">await</span> <span class="c-fn">fetch</span>(process.env.SLACK_WEBHOOK_URL, {
+        method: <span class="c-string">'POST'</span>,
+        headers: { <span class="c-string">'Content-Type'</span>: <span class="c-string">'application/json'</span> },
+        body: JSON.<span class="c-fn">stringify</span>(slackPayload),
+      });
+    } <span class="c-key">catch</span> (slackErr) {
+      <span class="c-comment">// Don't fail the webhook if Slack is down — Stripe needs a 200</span>
+      console.<span class="c-fn">error</span>(<span class="c-string">'Slack notification failed:'</span>, slackErr);
+    }
+  }
+
+  <span class="c-comment">// Always return 200 to Stripe or it will retry the webhook</span>
+  res.<span class="c-fn">status</span>(<span class="c-num">200</span>).<span class="c-fn">json</span>({ received: <span class="c-key">true</span> });
+};</pre>
+  </div>
+</section>
+
+<!-- ─── ENV VARS ───────────────────────────────────────────── -->
+<section id="env-vars">
+  <div class="section-num">Section 07</div>
+  <h2><span class="icon" style="background:#eaf3de">🔑</span> Environment Variables</h2>
+
+  <p>All five variables go in <strong>Vercel → Project → Settings → Environment Variables</strong>. Never put these in code or commit them to Git.</p>
+
+  <table class="env-table">
+    <thead>
+      <tr>
+        <th>Variable name</th>
+        <th>Example value</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="env-name">STRIPE_SECRET_KEY</span></td>
+        <td><span class="env-example">sk_test_51abc...</span></td>
+        <td>Use <code>sk_test_</code> during dev, swap to <code>sk_live_</code> for production. Never commit to code.</td>
+      </tr>
+      <tr>
+        <td><span class="env-name">DEPOSIT_AMOUNT_CENTS</span></td>
+        <td><span class="env-example">50000</span></td>
+        <td>Amount in cents. $500 = <code>50000</code>. $300 = <code>30000</code>. Change here any time — no code edits needed. Also update the display in <code>index.html</code>.</td>
+      </tr>
+      <tr>
+        <td><span class="env-name">SITE_URL</span></td>
+        <td><span class="env-example">https://your-project.vercel.app</span></td>
+        <td>Your Vercel deployment URL. No trailing slash. Used for Stripe's <code>success_url</code> and <code>cancel_url</code>.</td>
+      </tr>
+      <tr>
+        <td><span class="env-name">SLACK_WEBHOOK_URL</span></td>
+        <td><span class="env-example">https://hooks.slack.com/services/...</span></td>
+        <td>From Slack app Incoming Webhooks. See Section 09 for how to get this.</td>
+      </tr>
+      <tr>
+        <td><span class="env-name">STRIPE_WEBHOOK_SECRET</span></td>
+        <td><span class="env-example">whsec_abc123...</span></td>
+        <td>From Stripe Dashboard → Webhooks → your endpoint → Signing secret. Different from the API key. See Section 10.</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ─── SLACK SETUP ───────────────────────────────────────── -->
+<section id="slack-setup">
+  <div class="section-num">Section 08</div>
+  <h2><span class="icon" style="background:#faeeda">💬</span> Slack Webhook Setup</h2>
+
+  <p>The client does this in their own Slack account. It takes about 2 minutes and is free.</p>
+
+  <ol class="steps">
+    <li>
+      <strong>Go to api.slack.com/apps</strong>
+      <p>Sign in with the client's Slack account. Click <strong>Create New App</strong> → choose <strong>From scratch</strong>.</p>
+    </li>
+    <li>
+      <strong>Name and pick workspace</strong>
+      <p>Name it anything — e.g. "Deposit Alerts". Select the client's Slack workspace. Click <strong>Create App</strong>.</p>
+    </li>
+    <li>
+      <strong>Enable Incoming Webhooks</strong>
+      <p>In the left sidebar under <strong>Features</strong>, click <strong>Incoming Webhooks</strong>. Toggle the switch to <strong>On</strong>.</p>
+    </li>
+    <li>
+      <strong>Add webhook to workspace</strong>
+      <p>Scroll down and click <strong>Add New Webhook to Workspace</strong>. Pick the channel where alerts should appear (e.g. #deposits or #rentals). Click <strong>Allow</strong>.</p>
+    </li>
+    <li>
+      <strong>Copy the URL</strong>
+      <p>A URL starting with <code>https://hooks.slack.com/services/...</code> will appear. Copy it. This is the <code>SLACK_WEBHOOK_URL</code> environment variable.</p>
+    </li>
+  </ol>
+</section>
+
+<!-- ─── STRIPE WEBHOOK ────────────────────────────────────── -->
+<section id="stripe-webhook">
+  <div class="section-num">Section 09</div>
+  <h2><span class="icon" style="background:#e1f5ee">⚡</span> Stripe Webhook Setup</h2>
+
+  <p>This registers your deployed URL with Stripe so it knows where to send events.</p>
+
+  <div class="alert alert-warning">
+    <div class="alert-title">Do this after the first deployment</div>
+    <p>You need your live Vercel URL first. Complete the initial deploy (Section 10, steps 1–6), then come back here.</p>
+  </div>
+
+  <ol class="steps">
+    <li>
+      <strong>Open Stripe Dashboard → Developers → Webhooks</strong>
+      <p>Use test mode during development, switch to live mode for production.</p>
+    </li>
+    <li>
+      <strong>Click "Add endpoint"</strong>
+      <p>Endpoint URL: <code>https://YOUR-VERCEL-URL.vercel.app/api/webhook</code></p>
+    </li>
+    <li>
+      <strong>Select the event to listen for</strong>
+      <p>Search for and select <code>checkout.session.completed</code>. This fires when a customer completes the Stripe checkout form (hold is placed).</p>
+    </li>
+    <li>
+      <strong>Click "Add endpoint" to save</strong>
+      <p>Stripe will show the endpoint details page.</p>
+    </li>
+    <li>
+      <strong>Copy the Signing Secret</strong>
+      <p>Click <strong>Reveal</strong> under "Signing secret". Copy the <code>whsec_...</code> value. This is your <code>STRIPE_WEBHOOK_SECRET</code> environment variable. Add it to Vercel settings.</p>
+    </li>
+    <li>
+      <strong>Redeploy after adding the secret</strong>
+      <p>Run <code>vercel --prod</code> again or trigger a redeploy in the Vercel dashboard so the new env var takes effect.</p>
+    </li>
+  </ol>
+</section>
+
+<!-- ─── DEPLOY STEPS ──────────────────────────────────────── -->
+<section id="deploy-steps">
+  <div class="section-num">Section 10</div>
+  <h2><span class="icon" style="background:#eeedfe">🚀</span> Deployment Steps</h2>
+
+  <ol class="steps">
+    <li>
+      <strong>Create the project folder</strong>
+      <p>Make a folder called <code>deposit-link</code>. Create all 6 files inside it exactly as shown in Section 06.</p>
+    </li>
+    <li>
+      <strong>Install dependencies locally (for testing)</strong>
+      <p>Run <code>npm install</code> in the project folder. This creates <code>node_modules/</code> locally.</p>
+    </li>
+    <li>
+      <strong>Deploy to Vercel</strong>
+      <p>Run <code>vercel --prod</code> in the project folder. On first run it asks for project name and settings — accept all defaults. Note the URL Vercel assigns (e.g. <code>deposit-link-xxx.vercel.app</code>).</p>
+    </li>
+    <li>
+      <strong>Add environment variables in Vercel Dashboard</strong>
+      <p>Go to <strong>vercel.com → your project → Settings → Environment Variables</strong>. Add all 5 variables from Section 07. For the first deploy, use <code>sk_test_</code> Stripe key.</p>
+    </li>
+    <li>
+      <strong>Set up Stripe webhook (Section 09)</strong>
+      <p>Now that you have the Vercel URL, register the webhook endpoint in Stripe Dashboard and copy the signing secret back to Vercel.</p>
+    </li>
+    <li>
+      <strong>Redeploy to pick up env vars</strong>
+      <p>Run <code>vercel --prod</code> again, or click <strong>Redeploy</strong> in the Vercel dashboard. Env vars only take effect after a deploy.</p>
+    </li>
+    <li>
+      <strong>Test with Stripe test card (see Section 11)</strong>
+      <p>Open the live URL, click the button, complete the Stripe checkout with the test card. Verify the hold appears in Stripe Dashboard and the Slack alert fires.</p>
+    </li>
+    <li>
+      <strong>Go live: swap to live Stripe keys</strong>
+      <p>In Vercel env vars, replace <code>sk_test_</code> with <code>sk_live_</code>. Also update <code>STRIPE_WEBHOOK_SECRET</code> — it changes between test and live mode. Redeploy. Send the URL to the client.</p>
+    </li>
+  </ol>
+</section>
+
+<!-- ─── TESTING ───────────────────────────────────────────── -->
+<section id="testing">
+  <div class="section-num">Section 11</div>
+  <h2><span class="icon" style="background:#eaf3de">✅</span> Testing Checklist</h2>
+
+  <p>Use Stripe test mode and the test card below. Do not skip any item.</p>
+
+  <div class="alert alert-info">
+    <div class="alert-title">Stripe test card details</div>
+    <p>Card number: <code>4242 4242 4242 4242</code> · Expiry: any future date · CVC: any 3 digits · ZIP: any 5 digits</p>
+  </div>
+
+  <ul class="checklist">
+    <li><strong>Button click redirects to Stripe</strong> — Clicking the button takes you to a Stripe-hosted checkout page (stripe.com URL).</li>
+    <li><strong>Line item shows correct amount</strong> — The Stripe checkout page shows "Security Deposit — Vehicle Rental" at the correct dollar amount.</li>
+    <li><strong>Test card completes successfully</strong> — Using the test card, checkout completes and you land on <code>/success.html</code>.</li>
+    <li><strong>Payment shows as Uncaptured in Stripe</strong> — In Stripe Dashboard → Payments, the payment status is "Uncaptured" (not "Succeeded"). This confirms the hold is working.</li>
+    <li><strong>Slack alert fires</strong> — A message appears in the configured Slack channel with amount, customer name, email, and Payment Intent ID.</li>
+    <li><strong>Cancel returns to homepage</strong> — Clicking "Back" on the Stripe checkout page returns to <code>index.html</code>.</li>
+    <li><strong>Manual capture works</strong> — In Stripe Dashboard, click the uncaptured payment → Capture → confirm charge goes through.</li>
+    <li><strong>Manual release works</strong> — Create another test authorization → Cancel payment intent in Stripe Dashboard → confirm it is voided.</li>
+    <li><strong>Webhook signature verified</strong> — Check Vercel function logs to confirm no signature errors. Stripe Dashboard → Webhooks → your endpoint → Recent deliveries should show 200 responses.</li>
+    <li><strong>Test on mobile</strong> — Open the URL on a phone. Button and page should be fully usable on a small screen.</li>
+  </ul>
+</section>
+
+<!-- ─── POST DEPLOY ───────────────────────────────────────── -->
+<section id="post-deploy">
+  <div class="section-num">Section 12</div>
+  <h2><span class="icon" style="background:#faece7">📖</span> Owner's Workflow (Post-Deploy)</h2>
+
+  <p>Once live, the client manages everything from <strong>Stripe Dashboard → Payments</strong>. No technical knowledge needed for day-to-day operation.</p>
+
+  <h3>When a customer authorizes a deposit</h3>
+  <p>A Slack alert fires instantly. The payment appears in the Stripe Dashboard with status <strong>Uncaptured</strong>. No money has moved yet.</p>
+
+  <h3>After the vehicle is returned</h3>
+  <p>In Stripe Dashboard → Payments → click the payment → two options appear:</p>
+  <ul style="padding-left:1.5rem; margin-bottom:1rem; font-size:0.875rem; color:var(--muted);">
+    <li style="margin-bottom:0.5rem;"><strong style="color:var(--text)">Capture</strong> — Charges the customer. Use this if there is damage or outstanding balance.</li>
+    <li><strong style="color:var(--text)">Cancel payment intent</strong> — Releases the hold with no charge. Use this after a clean return.</li>
+  </ul>
+
+  <h3>Changing the deposit amount</h3>
+  <p>Go to Vercel Dashboard → Project → Settings → Environment Variables → update <code>DEPOSIT_AMOUNT_CENTS</code> → trigger a redeploy. Also update the display amount in <code>index.html</code> and redeploy. The new amount takes effect immediately for all future sessions. Existing authorized holds are unaffected.</p>
+
+  <div class="alert alert-warning">
+    <div class="alert-title">Authorization window — 7 days</div>
+    <p>Stripe's default hold expires after 7 days. If the client needs longer (e.g. week-long rentals with buffer time), they must enable <strong>Extended Authorization</strong> in Stripe Dashboard → Settings → Extended Authorization (allows up to 30 days). Flag this to the client during handover.</p>
+  </div>
+</section>
+
+</main>
+</div>
+
+</body>
+</html>
